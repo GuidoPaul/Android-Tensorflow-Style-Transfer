@@ -8,5 +8,5 @@
 /captures
 .externalNativeBuild
 /.idea
-/style-transfer
+/style-transfer/*
 !/style-transfer/*.py
