@@ -7,8 +7,10 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -19,21 +21,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
-    private static final String MODEL_FILE = "file:///android_asset/style_graph_frozen.pb";
-    private static final String INPUT_NODE = "X_inputs";
+    private static final String MODEL_FILE = "file:///android_asset/frozen_la_muse.pb";
+    private static final String INPUT_NODE = "input";
     private static final String OUTPUT_NODE = "output";
+
     private int[] intValues;
     private float[] floatValues;
-    private int desiredSize = 256;
 
     private ImageView ivPhoto;
 
-    private String mFilePath;
+    File photoFile;
     private FileInputStream is = null;
     private static final int CODE = 1;
 
@@ -44,9 +49,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mFilePath = Environment.getExternalStorageDirectory().toString();
-        mFilePath = mFilePath + File.separator + "Download" + File.separator + "photo.png";
-
         ivPhoto = (ImageView) findViewById(R.id.ivPhoto);
 
         Button onCamera = (Button) findViewById(R.id.onCamera);
@@ -54,18 +56,48 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                Uri uri = Uri.fromFile(new File(mFilePath));
-                intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
-                startActivityForResult(intent, CODE);
+                if (intent.resolveActivity(getPackageManager()) != null) {
+                    try {
+                        photoFile = createImageFile();  //创建临时图片文件，方法在下面
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    if (photoFile != null) {
+                        //FileProvider 是一个特殊的 ContentProvider 的子类，它使用 content:// Uri 代替了 file:///
+                        // Uri. ，更便利而且安全的为另一个app分享文件
+                        Uri photoURI = FileProvider.getUriForFile(MainActivity.this,
+                                BuildConfig.APPLICATION_ID + ".fileprovider",
+                                photoFile);
+                        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                        startActivityForResult(intent, 1);
+                    }
+                }
             }
         });
 
         initTensorFlowAndLoadModel();
     }
 
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        // getExternalFilesDir()方法可以获取到 SDCard/Android/data/你的应用的包名/files/ 目录，一般放一些长时间保存的数据
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        Log.d("TAH", storageDir.toString());
+        //创建临时文件,文件前缀不能少于三个字符,后缀如果为空默认未".tmp"
+        File image = File.createTempFile(
+                imageFileName,  /* 前缀 */
+                ".jpg",         /* 后缀 */
+                storageDir      /* 文件夹 */
+        );
+        return image;
+    }
+
+
     private void initTensorFlowAndLoadModel() {
-        intValues = new int[desiredSize * desiredSize];
-        floatValues = new float[desiredSize * desiredSize * 3];
+        intValues = new int[640 * 480];
+        floatValues = new float[640 * 480 * 3];
         inferenceInterface = new TensorFlowInferenceInterface(getAssets(), MODEL_FILE);
     }
 
@@ -87,10 +119,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Bitmap stylizeImage(Bitmap bitmap) {
-        Bitmap scaledBitmap = scaleBitmap(bitmap, desiredSize, desiredSize);
+        Bitmap scaledBitmap = scaleBitmap(bitmap, 480, 640); // desiredSize
         scaledBitmap.getPixels(intValues, 0, scaledBitmap.getWidth(), 0, 0,
                 scaledBitmap.getWidth(), scaledBitmap.getHeight());
-
         for (int i = 0; i < intValues.length; ++i) {
             final int val = intValues[i];
             floatValues[i * 3] = ((val >> 16) & 0xFF) * 1.0f;
@@ -99,8 +130,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Copy the input data into TensorFlow.
-        inferenceInterface.feed(INPUT_NODE, floatValues, 1, desiredSize, desiredSize, 3);
+        inferenceInterface.feed(INPUT_NODE, floatValues, 640, 480, 3);
+        // Run the inference call.
         inferenceInterface.run(new String[]{OUTPUT_NODE});
+        // Copy the output Tensor back into the output array.
         inferenceInterface.fetch(OUTPUT_NODE, floatValues);
 
         for (int i = 0; i < intValues.length; ++i) {
@@ -121,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK) {
             if (requestCode == CODE) {
                 try {
-                    is = new FileInputStream(mFilePath);
+                    is = new FileInputStream(photoFile);
                     Bitmap bitmap = BitmapFactory.decodeStream(is);
                     Bitmap bitmap2 = stylizeImage(bitmap);
                     ivPhoto.setImageBitmap(bitmap2);

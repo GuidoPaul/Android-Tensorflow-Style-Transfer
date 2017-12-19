@@ -371,9 +371,28 @@ def main2(_):
                  os.path.join(FLAGS.test_dir, 'res_2.jpg'),
                  FLAGS.checkpoint_path)
 
+    # Freeze graph.
+    start_time = time.time()
+    freeze_graph(
+        input_graph=os.path.join(FLAGS.model_dir,
+                                 FLAGS.model_name + '.pb.txt'),
+        input_saver='',
+        input_binary=False,
+        input_checkpoint=FLAGS.checkpoint_path,
+        output_node_names='output',
+        restore_op_name='save/restore_all',
+        filename_tensor_name='save/Const:0',
+        output_graph=os.path.join(FLAGS.model_dir,
+                                  '%s_frozen.pb' % FLAGS.model_name),
+        clear_devices=False,
+        initializer_nodes='')
+    end_time = time.time()
+    delta_time = end_time - start_time
+    print('Save frozen pb done!, time:', delta_time)
+
 
 if __name__ == '__main__':
     parser = build_parser()
     FLAGS, unparsed = parser.parse_known_args()
 
-    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    tf.app.run(main=main2, argv=[sys.argv[0]] + unparsed)
