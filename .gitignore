@@ -10,3 +10,4 @@
 /.idea
 /style-transfer/*
 !/style-transfer/*.py
+!/style-transfer/model
