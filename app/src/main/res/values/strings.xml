@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Style-Transfer</string>
+    <string name="app_name">CycleGAN-Capture</string>
     <string name="button">Capture</string>
 </resources>
