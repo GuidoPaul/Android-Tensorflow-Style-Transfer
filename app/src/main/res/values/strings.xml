@@ -1,4 +1,8 @@
 <resources>
-    <string name="app_name">Style-Transfer</string>
+    <string name="app_name">TF-Capture</string>
     <string name="button">Capture</string>
+    <string name="from_gallery">Load</string>
+    <string name="check_permissions">Check Permissions</string>
+    <string name="load">Load</string>
+    <string name="press_check_permissions_and_grant_permissions_first">Press \'Check Permissions\' and grant permissions first</string>
 </resources>

@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <external-path path="Android/data/com.guido.styletransfer/files/Pictures" name="my_images" />
+    <external-path path="Android/data/com.andrewginns.TFCapture/files/Pictures" name="my_images" />
 </paths>

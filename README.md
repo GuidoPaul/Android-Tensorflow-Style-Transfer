@@ -1,6 +1,12 @@
-# Android-Tensorflow-Style-Transfer
+# CycleGAN-Capture
 
-## Phone screenshots
+Inference of a trained CycleGAN network for single images
+* Load images from the gallery
+* Take a new picture
+* Resolution can be changed in app
 
-<img src="./images/original_image.jpg" width = "300" height = "500" alt="0" align="center" />
-<img src="./images/style_transfer_image.jpg" width = "300" height = "500" alt="1" align="center" />
+## Pre-built apk https://github.com/andrewginns/CycleGAN-Capture/releases/
+
+## Part of an MSc project https://github.com/andrewginns/MSc-Project
+
+
